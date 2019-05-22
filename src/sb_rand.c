@@ -50,6 +50,11 @@
 # include <math.h>
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include "sb_options.h"
 #include "sb_rand.h"
 #include "sb_logger.h"
@@ -336,14 +341,14 @@ uint32_t sb_rand_pareto(uint32_t a, uint32_t b)
 	$ after.
 
 	Example - a 60 characters field will look like this
-	"/home/tcn/temp/src.txt$-----------------------------------"
+	"/home/tcn/temp/src.txt$------------------------------------"
 */
 static bool sb_str_from_file(const char *fmt, char* buf)
 {
 	const size_t	alloc_len	= 64 * 1024 * 1024 + 1;
-	static char *	text_buf	= NULL;
-	static size_t	text_len 	= 0;
-	static size_t	offset		= 0;
+	static __thread char *	text_buf	= NULL;
+	static __thread size_t	text_len 	= 0;
+	static __thread size_t	offset		= 0;
 	
 	if (NULL == fmt || '/' != fmt[0]) {
 		return false;
