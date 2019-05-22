@@ -61,6 +61,8 @@ sysbench.cmdline.options = {
        "client-generated IDs", true},
    create_table_options =
       {"Extra CREATE TABLE options", ""},
+   table_data_src_file =
+      {"Insert data to data based on given text file", ""},
    skip_trx =
       {"Don't start explicit transactions and execute all queries " ..
           "in the AUTOCOMMIT mode", false},
@@ -154,11 +156,37 @@ function get_pad_value()
    return sysbench.rand.string(pad_value_template)
 end
 
+function init_data_value()
+   if (#sysbench.opt.table_data_src_file > 0)
+   then
+      max_path_len = math.min(#c_value_template, #pad_value_template)
+      assert(#sysbench.opt.table_data_src_file <= max_path_len, string.format("the source data file path cannot exceed %d characters", max_path_len ))
+      print(sysbench.opt.table_data_src_file)
+      print(c_value_template)      
+      local tmp_str = "$"
+      for i = 0, #c_value_template - #sysbench.opt.table_data_src_file - 2, 1 do
+         tmp_str = tmp_str .. "-"
+      end
+      c_value_template = sysbench.opt.table_data_src_file .. tmp_str
+      print(c_value_template)
+
+      print(pad_value_template)
+      tmp_str = "$"
+      for i = 0, #pad_value_template - #sysbench.opt.table_data_src_file - 2, 1 do
+         tmp_str = tmp_str .. "-"
+      end
+      pad_value_template = sysbench.opt.table_data_src_file .. tmp_str
+      print(pad_value_template)
+   end
+end
+
 function create_table(drv, con, table_num)
    local id_index_def, id_def
    local engine_def = ""
    local extra_table_options = ""
    local query
+
+   init_data_value()
 
    if sysbench.opt.secondary then
      id_index_def = "KEY xid"
