@@ -149,11 +149,11 @@ local pad_value_template = "###########-###########-###########-" ..
    "###########-###########"
 
 function get_c_value()
-   return sysbench.rand.string(sysbench.opt.table_data_src_file, c_value_template)
+   return sysbench.rand.string1(sysbench.opt.table_data_src_file, c_value_template)
 end
 
 function get_pad_value()
-   return sysbench.rand.string(sysbench.opt.table_data_src_file, pad_value_template)
+   return sysbench.rand.string1(sysbench.opt.table_data_src_file, pad_value_template)
 end
 
 function create_table(drv, con, table_num)
@@ -472,7 +472,7 @@ function execute_non_index_updates()
    local tnum = get_table_num()
 
    for i = 1, sysbench.opt.non_index_updates do
-      param[tnum].non_index_updates[1]:set_rand_str(sysbench.opt.table_data_src_file, c_value_template)
+      param[tnum].non_index_updates[1]:set_rand_str1(sysbench.opt.table_data_src_file, c_value_template)
       param[tnum].non_index_updates[2]:set(get_id())
 
       stmt[tnum].non_index_updates:execute()
@@ -490,8 +490,8 @@ function execute_delete_inserts()
 
       param[tnum].inserts[1]:set(id)
       param[tnum].inserts[2]:set(k)
-      param[tnum].inserts[3]:set_rand_str(sysbench.opt.table_data_src_file, c_value_template)
-      param[tnum].inserts[4]:set_rand_str(sysbench.opt.table_data_src_file, pad_value_template)
+      param[tnum].inserts[3]:set_rand_str1(sysbench.opt.table_data_src_file, c_value_template)
+      param[tnum].inserts[4]:set_rand_str1(sysbench.opt.table_data_src_file, pad_value_template)
 
       stmt[tnum].deletes:execute()
       stmt[tnum].inserts:execute()

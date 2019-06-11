@@ -76,7 +76,7 @@ function sysbench.rand.string(fmt)
    return ffi.string(buf, buflen)
 end
 
-function sysbench.rand.string(path, fmt)
+function sysbench.rand.string1(path, fmt)
    local buflen = #fmt
    local buf = ffi.new("uint8_t[?]", buflen)
    ffi.C.sb_rand_str_1(path, fmt, buf)

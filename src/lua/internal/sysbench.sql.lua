@@ -369,7 +369,7 @@ function sql_param.set_rand_str(self, fmt)
    end
 end
 
-function sql_param.set_rand_str(self, path, fmt)
+function sql_param.set_rand_str1(self, path, fmt)
    local sql_type = sysbench.sql.type
    local btype = self.type
 
