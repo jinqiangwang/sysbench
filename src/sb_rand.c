@@ -343,68 +343,50 @@ uint32_t sb_rand_pareto(uint32_t a, uint32_t b)
 	Example - a 60 characters field will look like this
 	"/home/tcn/temp/src.txt$------------------------------------"
 */
-static bool sb_str_from_file(const char *fmt, char* buf)
+static void sb_str_from_file(const * path, const char *fmt, char* buf)
 {
-	const size_t	alloc_len	= 64 * 1024 * 1024 + 1;
+	const           size_t  alloc_len	= 64 * 1024 * 1024 + 1;
 	static __thread char *	text_buf	= NULL;
 	static __thread size_t	text_len 	= 0;
 	static __thread size_t	offset		= 0;
 	
-	if (NULL == fmt || '/' != fmt[0]) {
-		return false;
-	}
-	else {
-		if (NULL == text_buf) {
-			int len = 0;
-			int end = 0;
-			text_buf = calloc(1, alloc_len);
-			for (; '\0' != fmt[len]; len++) {
-				if ('$' == fmt[len]) end = len;
-			}
+  if (NULL == text_buf) {
+    text_buf = calloc(alloc_len, sizeof(char));
+    int file = open(path, O_RDONLY);
+    if ( -1 == file ) {
+      printf ("Failed to open file [%s] with error [%d].\n", fmt, errno);
+      exit(errno);
+    }
+    // only read first 64MB data from the specified file
+    //
+    text_len = read(file, text_buf, alloc_len - 1);
+    if ( 0xffffffff == text_len ) {
+      printf ("Failed to read file [%s] with error [%d].\n", fmt, errno);
+      close(file);
+      exit(errno);
+    }
+    close(file);
+  }
 
-      char * path = calloc(1, end);
-      for(int i = 0; i < end; i++) {
-        path[i] = fmt[i];
-      }
+  int i = 0;
+  for (; '\0' != fmt[i]; i++) {
+    if ( '\'' == text_buf[(offset + i) % text_len]) {
+      buf[i] = '-';
+    } 
+    else {
+      buf[i] = text_buf[(offset + i) % text_len];
+    }
+  }
 
-			int file = open(path, O_RDONLY);
-      if ( -1 == file ) {
-        printf ("Failed to open file [%s] with error [%d].\n", fmt, errno);
-        exit(errno);
-      }
-			text_len = read(file, text_buf, alloc_len - 1);
-      if ( 0xffffffff == text_len ) {
-        printf ("Failed to read file [%s] with error [%d].\n", fmt, errno);
-        exit(errno);
-      }
-			close(file);
-		}
-
-		int i = 0;
-		for (; '\0' != fmt[i]; i++) {
-      if ( '\'' == text_buf[(offset + i) % text_len]) {
-        buf[i] = '-';
-      } 
-      else {
-        buf[i] = text_buf[(offset + i) % text_len];
-      }
-		}
-
-		offset = (offset + i) % text_len;
-		return true;
-	}	
+  offset = (offset + i) % text_len;
 }
+
 
 /* Generate random string */
 
 void sb_rand_str(const char *fmt, char *buf)
 {
   unsigned int i;
-
-  if ('/' == fmt[0]) {
-    sb_str_from_file(fmt, buf);
-    return;
-  }
 
   for (i=0; fmt[i] != '\0'; i++)
   {
@@ -416,6 +398,21 @@ void sb_rand_str(const char *fmt, char *buf)
       buf[i] = fmt[i];
   }
 }
+
+
+/* Generate random string */
+
+void sb_rand_str_1(const char * path, const char *fmt, char *buf)
+{
+  if(NULL == path || 0 == strlen(path)) {
+    sb_rand_str(fmt, buf);
+  } 
+  else {
+    sb_str_from_file(path, fmt, buf);
+  }
+}
+
+
 
 /*
   Generates a random string of ASCII characters between '0' and 'z' of a length
@@ -485,7 +482,7 @@ uint32_t sb_rand_unique(void)
   inversion sampling method for a descrete, bounded Zipf distribution that is in
   turn based on the method described in:
 
-  Wolfgang Hörmann and Gerhard Derflinger. "Rejection-inversion to generate
+  Wolfgang H�rmann and Gerhard Derflinger. "Rejection-inversion to generate
   variates from monotone discrete distributions", ACM Transactions on Modeling
   and Computer Simulation, (TOMACS) 6.3 (1996): 169-184.
 */
@@ -660,3 +657,4 @@ static double helper2(double x)
   else
     return 1 + x * 0.5 * (1 + x * 0.33333333333333333 * (1 + 0.25 * x));
 }
+ 

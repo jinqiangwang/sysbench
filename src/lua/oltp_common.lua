@@ -149,35 +149,11 @@ local pad_value_template = "###########-###########-###########-" ..
    "###########-###########"
 
 function get_c_value()
-   return sysbench.rand.string(c_value_template)
+   return sysbench.rand.string(sysbench.opt.table_data_src_file, c_value_template)
 end
 
 function get_pad_value()
-   return sysbench.rand.string(pad_value_template)
-end
-
-function init_data_value()
-   if (#sysbench.opt.table_data_src_file > 0)
-   then
-      max_path_len = math.min(#c_value_template, #pad_value_template)
-      assert(#sysbench.opt.table_data_src_file <= max_path_len, string.format("the source data file path cannot exceed %d characters", max_path_len ))
-      print(sysbench.opt.table_data_src_file)
-      print(c_value_template)      
-      local tmp_str = "$"
-      for i = 0, #c_value_template - #sysbench.opt.table_data_src_file - 2, 1 do
-         tmp_str = tmp_str .. "-"
-      end
-      c_value_template = sysbench.opt.table_data_src_file .. tmp_str
-      print(c_value_template)
-
-      print(pad_value_template)
-      tmp_str = "$"
-      for i = 0, #pad_value_template - #sysbench.opt.table_data_src_file - 2, 1 do
-         tmp_str = tmp_str .. "-"
-      end
-      pad_value_template = sysbench.opt.table_data_src_file .. tmp_str
-      print(pad_value_template)
-   end
+   return sysbench.rand.string(sysbench.opt.table_data_src_file, pad_value_template)
 end
 
 function create_table(drv, con, table_num)
@@ -185,8 +161,6 @@ function create_table(drv, con, table_num)
    local engine_def = ""
    local extra_table_options = ""
    local query
-
-   init_data_value()
 
    if sysbench.opt.secondary then
      id_index_def = "KEY xid"
@@ -498,7 +472,7 @@ function execute_non_index_updates()
    local tnum = get_table_num()
 
    for i = 1, sysbench.opt.non_index_updates do
-      param[tnum].non_index_updates[1]:set_rand_str(c_value_template)
+      param[tnum].non_index_updates[1]:set_rand_str(sysbench.opt.table_data_src_file, c_value_template)
       param[tnum].non_index_updates[2]:set(get_id())
 
       stmt[tnum].non_index_updates:execute()
@@ -516,8 +490,8 @@ function execute_delete_inserts()
 
       param[tnum].inserts[1]:set(id)
       param[tnum].inserts[2]:set(k)
-      param[tnum].inserts[3]:set_rand_str(c_value_template)
-      param[tnum].inserts[4]:set_rand_str(pad_value_template)
+      param[tnum].inserts[3]:set_rand_str(sysbench.opt.table_data_src_file, c_value_template)
+      param[tnum].inserts[4]:set_rand_str(sysbench.opt.table_data_src_file, pad_value_template)
 
       stmt[tnum].deletes:execute()
       stmt[tnum].inserts:execute()
