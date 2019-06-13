@@ -36,18 +36,18 @@
 */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif
 
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
-# include <string.h>
+#include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-# include <strings.h>
+#include <strings.h>
 #endif
 #ifdef HAVE_MATH_H
-# include <math.h>
+#include <math.h>
 #endif
 
 #include <sys/types.h>
@@ -69,30 +69,31 @@ int sb_rand_seed; /* optional seed set on the command line */
 /* Random numbers command line options */
 
 static sb_arg_t rand_args[] =
-{
-  SB_OPT("rand-type",
-         "random numbers distribution {uniform, gaussian, special, pareto, "
-         "zipfian} to use by default", "special", STRING),
-  SB_OPT("rand-seed",
-         "seed for random number generator. When 0, the current time is "
-         "used as an RNG seed.", "0", INT),
-  SB_OPT("rand-spec-iter",
-         "number of iterations for the special distribution", "12", INT),
-  SB_OPT("rand-spec-pct",
-         "percentage of the entire range where 'special' values will fall "
-         "in the special distribution",
-         "1", INT),
-  SB_OPT("rand-spec-res",
-         "percentage of 'special' values to use for the special distribution",
-         "75", INT),
-  SB_OPT("rand-pareto-h", "shape parameter for the Pareto distribution",
-         "0.2", DOUBLE),
-  SB_OPT("rand-zipfian-exp",
-         "shape parameter (exponent, theta) for the Zipfian distribution",
-         "0.8", DOUBLE),
+    {
+        SB_OPT("rand-type",
+               "random numbers distribution {uniform, gaussian, special, pareto, "
+               "zipfian} to use by default",
+               "special", STRING),
+        SB_OPT("rand-seed",
+               "seed for random number generator. When 0, the current time is "
+               "used as an RNG seed.",
+               "0", INT),
+        SB_OPT("rand-spec-iter",
+               "number of iterations for the special distribution", "12", INT),
+        SB_OPT("rand-spec-pct",
+               "percentage of the entire range where 'special' values will fall "
+               "in the special distribution",
+               "1", INT),
+        SB_OPT("rand-spec-res",
+               "percentage of 'special' values to use for the special distribution",
+               "75", INT),
+        SB_OPT("rand-pareto-h", "shape parameter for the Pareto distribution",
+               "0.2", DOUBLE),
+        SB_OPT("rand-zipfian-exp",
+               "shape parameter (exponent, theta) for the Zipfian distribution",
+               "0.8", DOUBLE),
 
-  SB_OPT_END
-};
+        SB_OPT_END};
 
 static rand_dist_t rand_type;
 /* pointer to the default PRNG as defined by --rand-type */
@@ -111,7 +112,7 @@ static double rand_pct_2_mult;
 static double rand_res_mult;
 
 /* parameters for Pareto distribution */
-static double pareto_h; /* parameter h */
+static double pareto_h;     /* parameter h */
 static double pareto_power; /* parameter pre-calculated by h */
 
 /* parameter and precomputed values for the Zipfian distribution */
@@ -148,7 +149,7 @@ int sb_rand_register(void)
 
 int sb_rand_init(void)
 {
-  char     *s;
+  char *s;
 
   sb_rand_seed = sb_get_value_int("rand-seed");
 
@@ -194,8 +195,8 @@ int sb_rand_init(void)
   rand_res = sb_get_value_int("rand-spec-res");
   rand_res_mult = 100.0 / (100.0 - rand_res);
 
-  pareto_h  = sb_get_value_double("rand-pareto-h");
-  pareto_power = log(pareto_h) / log(1.0-pareto_h);
+  pareto_h = sb_get_value_double("rand-pareto-h");
+  pareto_power = log(pareto_h) / log(1.0 - pareto_h);
 
   zipf_exp = sb_get_value_double("rand-zipfian-exp");
   if (zipf_exp < 0)
@@ -217,14 +218,12 @@ int sb_rand_init(void)
   return 0;
 }
 
-
 void sb_rand_print_help(void)
 {
   printf("Pseudo-Random Numbers Generator options:\n");
 
   sb_print_options(rand_args);
 }
-
 
 void sb_rand_done(void)
 {
@@ -235,10 +234,10 @@ void sb_rand_done(void)
 void sb_rand_thread_init(void)
 {
   /* We use libc PRNG to seed xoroshiro128+ */
-  sb_rng_state[0] = (((uint64_t) random()) << 32) |
-    (((uint64_t) random()) & UINT32_MAX);
-  sb_rng_state[1] = (((uint64_t) random()) << 32) |
-    (((uint64_t) random()) & UINT32_MAX);
+  sb_rng_state[0] = (((uint64_t)random()) << 32) |
+                    (((uint64_t)random()) & UINT32_MAX);
+  sb_rng_state[1] = (((uint64_t)random()) << 32) |
+                    (((uint64_t)random()) & UINT32_MAX);
 }
 
 /*
@@ -248,7 +247,7 @@ void sb_rand_thread_init(void)
 
 uint32_t sb_rand_default(uint32_t a, uint32_t b)
 {
-  return rand_func(a,b);
+  return rand_func(a, b);
 }
 
 /* uniform distribution */
@@ -262,27 +261,27 @@ uint32_t sb_rand_uniform(uint32_t a, uint32_t b)
 
 uint32_t sb_rand_gaussian(uint32_t a, uint32_t b)
 {
-  double       sum;
-  double       t;
+  double sum;
+  double t;
   unsigned int i;
 
   t = b - a + 1;
-  for(i=0, sum=0; i < rand_iter; i++)
+  for (i = 0, sum = 0; i < rand_iter; i++)
     sum += sb_rand_uniform_double() * t;
 
-  return a + (uint32_t) (sum * rand_iter_mult) ;
+  return a + (uint32_t)(sum * rand_iter_mult);
 }
 
 /* 'special' distribution */
 
 uint32_t sb_rand_special(uint32_t a, uint32_t b)
 {
-  double       sum;
-  double       t;
-  double       range_size;
-  double       res;
-  double       d;
-  double       rnd;
+  double sum;
+  double t;
+  double range_size;
+  double res;
+  double d;
+  double rnd;
   unsigned int i;
 
   t = b - a;
@@ -303,7 +302,7 @@ uint32_t sb_rand_special(uint32_t a, uint32_t b)
   {
     sum = 0.0;
 
-    for(i = 0; i < rand_iter; i++)
+    for (i = 0; i < rand_iter; i++)
       sum += sb_rand_uniform_double();
 
     return a + sum * t * rand_iter_mult;
@@ -320,15 +319,15 @@ uint32_t sb_rand_special(uint32_t a, uint32_t b)
   res = rnd * (d + 1);
   res += t / 2 - t * rand_pct_2_mult;
 
-  return a + (uint32_t) res;
+  return a + (uint32_t)res;
 }
 
 /* Pareto distribution */
 
 uint32_t sb_rand_pareto(uint32_t a, uint32_t b)
 {
-  return a + (uint32_t) ((b - a + 1) *
-                         pow(sb_rand_uniform_double(), pareto_power));
+  return a + (uint32_t)((b - a + 1) *
+                        pow(sb_rand_uniform_double(), pareto_power));
 }
 
 /*
@@ -343,25 +342,28 @@ uint32_t sb_rand_pareto(uint32_t a, uint32_t b)
 	Example - a 60 characters field will look like this
 	"/home/tcn/temp/src.txt$------------------------------------"
 */
-static void sb_str_from_file(const * path, const char *fmt, char* buf)
+static void sb_str_from_file(const *path, const char *fmt, char *buf)
 {
-	const           size_t  alloc_len	= 64 * 1024 * 1024 + 1;
-	static __thread char *	text_buf	= NULL;
-	static __thread size_t	text_len 	= 0;
-	static __thread size_t	offset		= 0;
-	
-  if (NULL == text_buf) {
+  const size_t alloc_len = 64 * 1024 * 1024 + 1;
+  static __thread char *text_buf = NULL;
+  static __thread size_t text_len = 0;
+  static __thread size_t offset = 0;
+
+  if (NULL == text_buf)
+  {
     text_buf = calloc(alloc_len, sizeof(char));
     int file = open(path, O_RDONLY);
-    if ( -1 == file ) {
-      printf ("Failed to open file [%s] with error [%d].\n", fmt, errno);
+    if (-1 == file)
+    {
+      printf("Failed to open file [%s] with error [%d].\n", fmt, errno);
       exit(errno);
     }
     // only read first 64MB data from the specified file
     //
     text_len = read(file, text_buf, alloc_len - 1);
-    if ( 0xffffffff == text_len ) {
-      printf ("Failed to read file [%s] with error [%d].\n", fmt, errno);
+    if (0xffffffff == text_len)
+    {
+      printf("Failed to read file [%s] with error [%d].\n", fmt, errno);
       close(file);
       exit(errno);
     }
@@ -369,18 +371,27 @@ static void sb_str_from_file(const * path, const char *fmt, char* buf)
   }
 
   int i = 0;
-  for (; '\0' != fmt[i]; i++) {
-    if ( '\'' == text_buf[(offset + i) % text_len]) {
+  for (; '\0' != fmt[i]; i++)
+  {
+    switch (text_buf[(offset + i) % text_len])
+    {
+    case '\\':
+      buf[i] = '_';
+      break;
+    case '\'':
       buf[i] = '-';
-    } 
-    else {
+      break;
+    default:
       buf[i] = text_buf[(offset + i) % text_len];
+    }
+    if ('\'' == text_buf[(offset + i) % text_len])
+    {
+      buf[i] = '-';
     }
   }
 
   offset = (offset + i) % text_len;
 }
-
 
 /* Generate random string */
 
@@ -388,7 +399,7 @@ void sb_rand_str(const char *fmt, char *buf)
 {
   unsigned int i;
 
-  for (i=0; fmt[i] != '\0'; i++)
+  for (i = 0; fmt[i] != '\0'; i++)
   {
     if (fmt[i] == '#')
       buf[i] = sb_rand_uniform('0', '9');
@@ -399,20 +410,19 @@ void sb_rand_str(const char *fmt, char *buf)
   }
 }
 
-
 /* Generate random string */
 
-void sb_rand_str_1(const char * path, const char *fmt, char *buf)
+void sb_rand_str_1(const char *path, const char *fmt, char *buf)
 {
-  if(NULL == path || 0 == strlen(path)) {
+  if (NULL == path || 0 == strlen(path))
+  {
     sb_rand_str(fmt, buf);
-  } 
-  else {
+  }
+  else
+  {
     sb_str_from_file(path, fmt, buf);
   }
 }
-
-
 
 /*
   Generates a random string of ASCII characters between '0' and 'z' of a length
@@ -424,7 +434,8 @@ uint32_t sb_rand_varstr(char *buf, uint32_t min_len, uint32_t max_len)
 {
   unsigned int i;
   uint32_t num_chars;
-  if (max_len == 0) {
+  if (max_len == 0)
+  {
     return 0; /* we can't be sure buf is long enough to populate, so be safe */
   }
   if (min_len > max_len)
@@ -433,7 +444,7 @@ uint32_t sb_rand_varstr(char *buf, uint32_t min_len, uint32_t max_len)
   }
 
   num_chars = sb_rand_uniform(min_len, max_len);
-  for (i=0; i < num_chars; i++)
+  for (i = 0; i < num_chars; i++)
   {
     buf[i] = sb_rand_uniform('0', 'z');
   }
@@ -452,17 +463,16 @@ static uint32_t rand_unique_permute(uint32_t x)
   if (x >= prime)
     return x; /* The 5 integers out of range are mapped to themselves. */
 
-  uint32_t residue = ((uint64_t) x * x) % prime;
+  uint32_t residue = ((uint64_t)x * x) % prime;
   return (x <= prime / 2) ? residue : prime - residue;
 }
-
 
 static void rand_unique_seed(uint32_t index, uint32_t offset)
 {
   rand_unique_index = rand_unique_permute(rand_unique_permute(index) +
                                           0x682f0161);
   rand_unique_offset = rand_unique_permute(rand_unique_permute(offset) +
-                                          0x46790905);
+                                           0x46790905);
 }
 
 /* This is safe to be called concurrently from multiple threads */
@@ -516,11 +526,11 @@ static uint32_t sb_rand_zipfian_int(uint32_t n, double e, double s,
   for (;;)
   {
     double u = hIntegralNumberOfElements + sb_rand_uniform_double() *
-      (hIntegralX1 - hIntegralNumberOfElements);
+                                               (hIntegralX1 - hIntegralNumberOfElements);
     /* u is uniformly distributed in (hIntegralX1, hIntegralNumberOfElements] */
 
     double x = hIntegralInverse(u, e);
-    uint32_t k = (uint32_t) (x + 0.5);
+    uint32_t k = (uint32_t)(x + 0.5);
 
     /*
       Limit k to the range [1, numberOfElements] if it would be outside due to
@@ -588,7 +598,7 @@ uint32_t sb_rand_zipfian(uint32_t a, uint32_t b)
 {
   /* sb_rand_zipfian_int() returns a number in the range [1, b - a + 1] */
   return a +
-    sb_rand_zipfian_int(b - a + 1, zipf_exp, zipf_s, zipf_hIntegralX1) - 1;
+         sb_rand_zipfian_int(b - a + 1, zipf_exp, zipf_s, zipf_hIntegralX1) - 1;
 }
 
 /*
@@ -617,7 +627,7 @@ static double h(double x, double e)
 
 static double hIntegralInverse(double x, double e)
 {
-  double t = x * (1 -e);
+  double t = x * (1 - e);
   if (t < -1)
   {
     /*
