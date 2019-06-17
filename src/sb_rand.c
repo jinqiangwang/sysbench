@@ -54,6 +54,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "sb_options.h"
 #include "sb_rand.h"
@@ -330,44 +331,60 @@ uint32_t sb_rand_pareto(uint32_t a, uint32_t b)
                         pow(sb_rand_uniform_double(), pareto_power));
 }
 
+
+static size_t get_text_buf(char * path, char ** ppbuf) {
+  const   size_t          max_alloc_len = 64 * 1024 * 1024 + 1;
+  static  char            *text_buf     = NULL;
+  static  size_t          text_len      = 0;
+  static  pthread_mutex_t mutex         = PTHREAD_MUTEX_INITIALIZER;
+
+  if (ppbuf == NULL) {
+    printf("Invalid buffer porinter.\n");
+    exit(-1);
+  }
+  
+  pthread_mutex_lock(&mutex);
+  if (NULL == text_buf)
+  {
+    text_buf = calloc(max_alloc_len, sizeof(char));
+    int file = open(path, O_RDONLY);
+    if (-1 == file)
+    {
+      printf("Failed to open file [%s] with error [%d].\n", path, errno);
+      pthread_mutex_unlock(&mutex);
+      exit(errno);
+    }
+    // read at most 64MB data from the specified file
+    //
+    text_len = read(file, text_buf, max_alloc_len - 1);
+    if (0xffffffff == text_len)
+    {
+      printf("Failed to read file [%s] with error [%d].\n", path, errno);
+      close(file);
+      pthread_mutex_unlock(&mutex);
+      exit(errno);
+    }
+    close(file);
+  }
+  pthread_mutex_unlock(&mutex);
+
+  *ppbuf = text_buf;
+  return text_len;
+}
+
 /*
 	Fill data buffer from specfied text file.
-	If the firsttemplate string starts with a 
-	'/' it will be treated as path to a text
-	file, the path ends when seeing first '$'.
-	The template is also used to indicate length
-	of the buffer so need to pad any character 
-	$ after.
-
-	Example - a 60 characters field will look like this
-	"/home/tcn/temp/src.txt$------------------------------------"
+	File path is passed in by "path"
 */
 static void sb_str_from_file(const *path, const char *fmt, char *buf)
 {
-  const size_t alloc_len = 64 * 1024 * 1024 + 1;
   static __thread char *text_buf = NULL;
   static __thread size_t text_len = 0;
   static __thread size_t offset = 0;
 
   if (NULL == text_buf)
   {
-    text_buf = calloc(alloc_len, sizeof(char));
-    int file = open(path, O_RDONLY);
-    if (-1 == file)
-    {
-      printf("Failed to open file [%s] with error [%d].\n", fmt, errno);
-      exit(errno);
-    }
-    // only read first 64MB data from the specified file
-    //
-    text_len = read(file, text_buf, alloc_len - 1);
-    if (0xffffffff == text_len)
-    {
-      printf("Failed to read file [%s] with error [%d].\n", fmt, errno);
-      close(file);
-      exit(errno);
-    }
-    close(file);
+    text_len = get_text_buf(path, &text_buf);
   }
 
   int i = 0;
@@ -383,10 +400,6 @@ static void sb_str_from_file(const *path, const char *fmt, char *buf)
       break;
     default:
       buf[i] = text_buf[(offset + i) % text_len];
-    }
-    if ('\'' == text_buf[(offset + i) % text_len])
-    {
-      buf[i] = '-';
     }
   }
 
