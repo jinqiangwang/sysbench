@@ -332,7 +332,7 @@ uint32_t sb_rand_pareto(uint32_t a, uint32_t b)
 }
 
 
-static size_t get_text_buf(char * path, char ** ppbuf) {
+static size_t get_text_buf(const char * path, char ** ppbuf) {
   const   size_t          max_alloc_len = 64 * 1024 * 1024 + 1;
   static  char            *text_buf     = NULL;
   static  size_t          text_len      = 0;
@@ -342,7 +342,7 @@ static size_t get_text_buf(char * path, char ** ppbuf) {
     printf("Invalid buffer porinter.\n");
     exit(-1);
   }
-  
+
   pthread_mutex_lock(&mutex);
   if (NULL == text_buf)
   {
@@ -376,7 +376,7 @@ static size_t get_text_buf(char * path, char ** ppbuf) {
 	Fill data buffer from specfied text file.
 	File path is passed in by "path"
 */
-static void sb_str_from_file(const *path, const char *fmt, char *buf)
+static void sb_str_from_file(const char *path, const char *fmt, char *buf)
 {
   static __thread char *text_buf = NULL;
   static __thread size_t text_len = 0;

@@ -61,6 +61,8 @@ sysbench.cmdline.options = {
        "client-generated IDs", true},
    create_table_options =
       {"Extra CREATE TABLE options", ""},
+   create_index_options =
+      {"Extra CREATE INDEX options", ""},
    table_data_src_file =
       {"Insert data to data based on given text file", ""},
    skip_trx =
@@ -244,8 +246,8 @@ CREATE TABLE sbtest%d(
    if sysbench.opt.create_secondary then
       print(string.format("Creating a secondary index on 'sbtest%d'...",
                           table_num))
-      con:query(string.format("CREATE INDEX k_%d ON sbtest%d(k)",
-                              table_num, table_num))
+      con:query(string.format("CREATE INDEX k_%d ON sbtest%d(k) %s",
+                              table_num, table_num, sysbench.opt.create_index_options))
    end
 end
 
