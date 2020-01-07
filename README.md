@@ -17,16 +17,7 @@ Used along with below option MySQL page copmression can be tested with different
 
 These 2 options are workload options, they need to be added after workload file name in sysbench command line. For an example -
 
-`sysbench \
-    --db-driver=mysql --mysql-socket=/tmp/mysqld.sock \
-    --mysql-db=sbtest --mysql-user=root --mysql-pwd=my_password \
-    --report-interval=1 --time=3600 --threads=64 \
-    --percentile=95 /usr/local/share/sysbench/oltp_insert.lua \
-    --warmup-time=60 --rand-type=${rand_type} --histogram=on \
-    --tables=64 --table-size=5000000 \
-    --create-table-options=none \
-    --table-data-src-file=./normal.txt \
-    prepare`
+`sysbench --db-driver=mysql --mysql-socket=/tmp/mysqld.sock --mysql-db=sbtest --mysql-user=root --mysql-pwd=my_password --report-interval=1 --time=3600 --threads=64 --percentile=95 /usr/local/share/sysbench/oltp_insert.lua --warmup-time=60 --rand-type={rand_type} --histogram=on --tables=64 --table-size=5000000 --create-table-options=none --table-data-src-file=./normal.txt prepare`
 
 
 Original Sysbench [README](README.org.md) goes here.
